@@ -104,8 +104,39 @@ public class PlayerListener implements Listener {
         if(pcache == null) return;
 
         if(pcache.containsKey("b")){
-            MCBans.broadcastPlayer(playerName, ChatColor.DARK_RED + "You have bans on record! ( check http://mcbans.com )" );
-            MCBans.broadcastJoinView( ChatColor.DARK_RED + MCBans.Language.getFormat( "previousBans", playerName ) );
+            //MCBans.broadcastPlayer(playerName, ChatColor.DARK_RED + "You have bans on record! ( check http://mcbans.com )" );
+            //MCBans.broadcastJoinView( ChatColor.DARK_RED + MCBans.Language.getFormat( "previousBans", playerName ) );
+
+            // Modify
+            if (!MCBans.Permissions.isAllow(playerName, "ignoreBroadcastLowRep")){
+                //MCBans.broadcastAll("プレイヤー'" + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + "'は" + ChatColor.DARK_RED + response.getString("totalBans") + "つのBAN" + ChatColor.WHITE + "を受けています" + ChatColor.AQUA + "(" + response.getString("playerRep") + " REP)" );
+                MCBans.broadcastAll( ChatColor.RED + MCBans.Language.getFormat( "previousBans", playerName ) );
+            }else{
+                //MCBans.broadcastJoinView( "Player " + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + " has " + ChatColor.DARK_RED + response.getString("totalBans") + " ban(s)" + ChatColor.WHITE + " and " + ChatColor.AQUA + response.getString("playerRep") + " REP" + ChatColor.WHITE + "." );
+                MCBans.broadcastJoinView( ChatColor.DARK_RED + MCBans.Language.getFormat( "previousBans", playerName ) );
+            }
+            // older codes
+            /*
+            if (response.getJSONArray("globalBans").length() > 0 && MCBans.Settings.getBoolean("onConnectGlobals")) {
+                // Modify
+                if (!MCBans.Permissions.isAllow(PlayerName, "ignoreBroadcastLowRep")){
+                    MCBans.broadcastAll("プレイヤー'" + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + "'は" + ChatColor.DARK_RED + response.getString("totalBans") + "つのBAN" + ChatColor.WHITE + "を受けています" + ChatColor.AQUA + "(" + response.getString("playerRep") + " REP)" );
+                }else{
+                    MCBans.broadcastJoinView( "Player " + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + " has " + ChatColor.DARK_RED + response.getString("totalBans") + " ban(s)" + ChatColor.WHITE + " and " + ChatColor.AQUA + response.getString("playerRep") + " REP" + ChatColor.WHITE + "." );
+                }
+                MCBans.broadcastJoinView("--------------------------");
+                if (response.getJSONArray("globalBans").length() > 0) {
+                    for (int v = 0; v < response.getJSONArray("globalBans").length(); v++) {
+                        out = response.getJSONArray("globalBans").getString(v).split(" .:. ");
+                        if (out.length == 2) {
+                            MCBans.broadcastJoinView(ChatColor.LIGHT_PURPLE + out[0]);
+                            MCBans.broadcastJoinView("\\---\"" + ChatColor.DARK_PURPLE + out[1] + "\"");
+                        }
+                    }
+                }
+                MCBans.broadcastJoinView("--------------------------");
+            }
+            */
         }
         if(pcache.containsKey("d")){
             MCBans.broadcastPlayer(playerName, ChatColor.DARK_RED + pcache.get("d") + " open disputes!" );
