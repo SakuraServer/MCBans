@@ -8,11 +8,14 @@ import com.mcbans.firestar.mcbans.commands.CommandHandler;
 import com.mcbans.firestar.mcbans.log.ActionLog;
 import com.mcbans.firestar.mcbans.log.LogLevels;
 import com.mcbans.firestar.mcbans.log.Logger;
+import com.mcbans.firestar.mcbans.permission.Perms;
 import com.mcbans.firestar.mcbans.rollback.RollbackHandler;
 
 import de.diddiz.LogBlock.LogBlock;
 import fr.neatmonster.nocheatplus.NoCheatPlus;
 
+
+import net.h31ix.anticheat.Anticheat;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -24,6 +27,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.HashMap;
 
 public class BukkitInterface extends JavaPlugin {
+    private static BukkitInterface instance;
+
     private CommandHandler commandHandle;
     private PlayerListener bukkitPlayer = new PlayerListener(this);
     public int taskID = 0;
@@ -45,10 +50,10 @@ public class BukkitInterface extends JavaPlugin {
     public String apiServers = "api01.cluster.mcbans.com,api02.cluster.mcbans.com,api03.cluster.mcbans.com,api.mcbans.com";
     public String apiServer = "";
     private String apiKey = "";
-    public BukkitPermissions Permissions = null;
     public Logger logger = new Logger(this);
     private RollbackHandler rbHandler = null;
     private boolean ncpEnabled = false;
+    private boolean acEnabled = false;
 
     @Override
     public void onDisable() {
@@ -67,29 +72,34 @@ public class BukkitInterface extends JavaPlugin {
 
     @Override
     public void onEnable() {
-
+        instance = this;
         PluginManager pm = getServer().getPluginManager();
-        pm.registerEvents(bukkitPlayer, this);
 
+        // check online-mode
         if (!this.getServer().getOnlineMode()) {
             logger.log(LogLevels.FATAL, "MCBans: Your server is not in online mode!");
             pm.disablePlugin(pluginInterface("mcbans"));
             return;
         }
 
+
+        pm.registerEvents(bukkitPlayer, this);
+
+        // load configuration
         Settings = new Settings();
         if (Settings.exists) {
             pm.disablePlugin(pluginInterface("mcbans"));
             return;
         }
-
         this.apiKey = Settings.getString("apiKey");
 
+        // load language
         String language;
         language = Settings.getString("language");
         log(LogLevels.INFO, "Loading language file: " + language);
         Language = new Language(this);
 
+        // Setup logging
         if (Settings.getBoolean("logEnable")) {
             log(LogLevels.INFO, "Starting to save to log file!");
             actionLog = new ActionLog(this, Settings.getString("logFile"));
@@ -98,13 +108,18 @@ public class BukkitInterface extends JavaPlugin {
             log(LogLevels.INFO, "Log file disabled!");
         }
 
-        Permissions = new BukkitPermissions(Settings, this);
+        // setup permissions
+        //Permissions = new BukkitPermissions(Settings, this);
+        Perms.setupPermissionHandler();
+
+        // regist commands
         commandHandle = new CommandHandler(Settings, this);
 
         MainCallBack thisThread = new MainCallBack(this);
         callbackThread = new Thread(thisThread);
         callbackThread.start();
 
+        // ban sync
         BanSync syncBanRunner = new BanSync(this);
         syncBan = new Thread(syncBanRunner);
         syncBan.start();
@@ -112,13 +127,14 @@ public class BukkitInterface extends JavaPlugin {
         serverChoose serverChooser = new serverChoose(this);
         (new Thread(serverChooser)).start();
 
+        // rollback handler
         rbHandler = new RollbackHandler(this);
         rbHandler.setupHandler();
 
-        checkNCP();
-        if (ncpEnabled){
-            log(LogLevels.INFO, "NoCheatPlus plugin found! Enabled this integration!");
-        }
+        // hookup integration plugin
+        checkPlugin(true);
+        if (ncpEnabled) log(LogLevels.INFO, "NoCheatPlus plugin found! Enabled this integration!");
+        if (acEnabled) log(LogLevels.INFO, "AntiCheat plugin found! Enabled this integration!");
 
         log(LogLevels.INFO, "Started up successfully!");
     }
@@ -128,12 +144,17 @@ public class BukkitInterface extends JavaPlugin {
         return commandHandle.execCommand(command.getName(), args, sender);
     }
 
-    public void checkNCP(){
-        Plugin check = getServer().getPluginManager().getPlugin("NoCheatPlus");
-        if (check != null && check instanceof NoCheatPlus && check.isEnabled()){
-            this.ncpEnabled = true;
-        }else{
-            this.ncpEnabled = false;
+    public void checkPlugin(boolean startup){
+        // Check NoCheatPlus
+        Plugin checkNCP = getServer().getPluginManager().getPlugin("NoCheatPlus");
+        this.ncpEnabled = (checkNCP != null && checkNCP instanceof NoCheatPlus);
+        // Check AntiCheat
+        Plugin checkAC = getServer().getPluginManager().getPlugin("AntiCheat");
+        this.acEnabled = (checkAC != null && checkAC instanceof Anticheat);
+
+        if (!startup){
+            if (ncpEnabled) ncpEnabled = (checkNCP.isEnabled());
+            if (acEnabled) acEnabled = (checkAC.isEnabled());
         }
     }
 
@@ -146,38 +167,6 @@ public class BukkitInterface extends JavaPlugin {
             actionLog.write(message);
         }
         logger.log(type, message);
-    }
-
-    public void broadcastBanView(String msg) {
-        for (String player : Permissions.getPlayersBan()) {
-            this.getServer().getPlayer(player).sendMessage(Settings.getPrefix() + " " + msg);
-        }
-    }
-
-    public void broadcastJoinView(String msg) {
-        for (String player : Permissions.getPlayersJoin()) {
-            this.getServer().getPlayer(player).sendMessage(Settings.getPrefix() + " " + msg);
-        }
-    }
-
-    public void broadcastJoinView(String msg, String playername) {
-        for (String player : Permissions.getPlayersJoin()) {
-            if (playername != player) {
-                this.getServer().getPlayer(player).sendMessage(Settings.getPrefix() + " " + msg);
-            }
-        }
-    }
-
-    public void broadcastAltView(String msg) {
-        for (String player : Permissions.getPlayersAlts()) {
-            this.getServer().getPlayer(player).sendMessage(Settings.getPrefix() + " " + msg);
-        }
-    }
-
-    public void broadcastKickView(String msg) {
-        for (String player : Permissions.getPlayersKick()) {
-            this.getServer().getPlayer(player).sendMessage(Settings.getPrefix() + " " + msg);
-        }
     }
 
     public void broadcastAll(String msg) {
@@ -203,6 +192,10 @@ public class BukkitInterface extends JavaPlugin {
         return this.ncpEnabled;
     }
 
+    public boolean isEnabledAC(){
+        return this.acEnabled;
+    }
+
     public RollbackHandler getRbHandler(){
         return this.rbHandler;
     }
@@ -213,5 +206,9 @@ public class BukkitInterface extends JavaPlugin {
 
     public Plugin pluginInterface(String pluginName) {
         return this.getServer().getPluginManager().getPlugin(pluginName);
+    }
+
+    public static BukkitInterface getInstance(){
+        return instance;
     }
 }
