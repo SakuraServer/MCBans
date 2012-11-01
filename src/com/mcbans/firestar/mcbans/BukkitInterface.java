@@ -1,19 +1,8 @@
 package com.mcbans.firestar.mcbans;
 
-import com.mcbans.firestar.mcbans.bukkitListeners.PlayerListener;
-import com.mcbans.firestar.mcbans.callBacks.BanSync;
-import com.mcbans.firestar.mcbans.callBacks.MainCallBack;
-import com.mcbans.firestar.mcbans.callBacks.serverChoose;
-import com.mcbans.firestar.mcbans.commands.CommandHandler;
-import com.mcbans.firestar.mcbans.log.ActionLog;
-import com.mcbans.firestar.mcbans.log.LogLevels;
-import com.mcbans.firestar.mcbans.log.Logger;
-import com.mcbans.firestar.mcbans.permission.Perms;
-import com.mcbans.firestar.mcbans.rollback.RollbackHandler;
-
-import de.diddiz.LogBlock.LogBlock;
-import fr.neatmonster.nocheatplus.NoCheatPlus;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import net.h31ix.anticheat.Anticheat;
 
@@ -24,12 +13,32 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.HashMap;
+import com.mcbans.firestar.mcbans.bukkitListeners.PlayerListener;
+import com.mcbans.firestar.mcbans.callBacks.BanSync;
+import com.mcbans.firestar.mcbans.callBacks.MainCallBack;
+import com.mcbans.firestar.mcbans.callBacks.serverChoose;
+import com.mcbans.firestar.mcbans.commands.BaseCommand;
+import com.mcbans.firestar.mcbans.commands.CommandBan;
+import com.mcbans.firestar.mcbans.commands.CommandGban;
+import com.mcbans.firestar.mcbans.commands.CommandKick;
+import com.mcbans.firestar.mcbans.commands.CommandLookup;
+import com.mcbans.firestar.mcbans.commands.CommandMcbans;
+import com.mcbans.firestar.mcbans.commands.CommandRban;
+import com.mcbans.firestar.mcbans.commands.CommandTempban;
+import com.mcbans.firestar.mcbans.commands.CommandUnban;
+import com.mcbans.firestar.mcbans.commands.MCBansCommandHandler;
+import com.mcbans.firestar.mcbans.log.ActionLog;
+import com.mcbans.firestar.mcbans.log.LogLevels;
+import com.mcbans.firestar.mcbans.log.Logger;
+import com.mcbans.firestar.mcbans.permission.Perms;
+import com.mcbans.firestar.mcbans.rollback.RollbackHandler;
+
+import fr.neatmonster.nocheatplus.NoCheatPlus;
 
 public class BukkitInterface extends JavaPlugin {
     private static BukkitInterface instance;
 
-    private CommandHandler commandHandle;
+    private MCBansCommandHandler commandHandler;
     private PlayerListener bukkitPlayer = new PlayerListener(this);
     public int taskID = 0;
     public HashMap<String, Integer> connectionData = new HashMap<String, Integer>();
@@ -113,7 +122,8 @@ public class BukkitInterface extends JavaPlugin {
         Perms.setupPermissionHandler();
 
         // regist commands
-        commandHandle = new CommandHandler(Settings, this);
+        commandHandler = new MCBansCommandHandler(this);
+        registerCommands();
 
         MainCallBack thisThread = new MainCallBack(this);
         callbackThread = new Thread(thisThread);
@@ -140,8 +150,34 @@ public class BukkitInterface extends JavaPlugin {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String commandLabel, String[] args) {
-        return commandHandle.execCommand(command.getName(), args, sender);
+    public boolean onCommand(final CommandSender sender, final Command command, final String label, final String[] args){
+        return commandHandler.onCommand(sender, command, label, args);
+    }
+
+    @Override
+    public List<String> onTabComplete(final CommandSender sender, final Command command, final String alias, final String[] args){
+        return commandHandler.onTabComplete(sender, command, alias, args);
+    }
+
+    private void registerCommands(){
+        List<BaseCommand> cmds = new ArrayList<BaseCommand>();
+        // Banning Commands
+        cmds.add(new CommandBan());
+        cmds.add(new CommandGban());
+        cmds.add(new CommandTempban());
+        cmds.add(new CommandRban());
+
+        // Other action commands
+        cmds.add(new CommandUnban());
+        cmds.add(new CommandKick());
+
+        // Other commands
+        cmds.add(new CommandLookup());
+        cmds.add(new CommandMcbans());
+
+        for (final BaseCommand cmd : cmds){
+            commandHandler.registerCommand(cmd);
+        }
     }
 
     public void checkPlugin(boolean startup){
@@ -175,12 +211,24 @@ public class BukkitInterface extends JavaPlugin {
         }
     }
 
-    public void broadcastPlayer(String Player, String msg) {
-        Player target = this.getServer().getPlayer(Player);
+    public void broadcastPlayer(final String playerName, String msg) {
+        final Player target = this.getServer().getPlayer(playerName);
         if (target != null) {
             target.sendMessage(Settings.getPrefix() + " " + msg);
         } else {
             System.out.print(Settings.getPrefix() + " " + msg);
+        }
+    }
+
+    public void broadcastPlayer(final Player target, String msg) {
+        if (target != null && msg != null){
+            target.sendMessage(Settings.getPrefix() + " " + msg);
+        }
+    }
+
+    public void broadcastPlayer(final CommandSender target, String msg) {
+        if (target != null && msg != null){
+            target.sendMessage(Settings.getPrefix() + " " + msg);
         }
     }
 
@@ -200,8 +248,8 @@ public class BukkitInterface extends JavaPlugin {
         return this.rbHandler;
     }
 
-    public void broadcastPlayer(Player target, String msg) {
-        target.sendMessage(Settings.getPrefix() + " " + msg);
+    public MCBansCommandHandler getCmdHandler(){
+        return this.commandHandler;
     }
 
     public Plugin pluginInterface(String pluginName) {
