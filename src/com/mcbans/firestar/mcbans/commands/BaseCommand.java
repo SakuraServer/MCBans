@@ -10,36 +10,37 @@ import org.bukkit.entity.Player;
 
 import com.mcbans.firestar.mcbans.BukkitInterface;
 import com.mcbans.firestar.mcbans.Settings;
+import com.mcbans.firestar.mcbans.exception.CommandException;
 
 public abstract class BaseCommand {
     // Set this class
-    public BukkitInterface plugin;
-    public Settings config;
-    public String command;
-    public List<String> args = new ArrayList<String>();
-    public CommandSender sender;
-    public String senderName = "Console";
-    public Player player;
-    public boolean isPlayer = false;
+    protected BukkitInterface plugin;
+    protected Settings config;
+    protected String command;
+    protected List<String> args = new ArrayList<String>();
+    protected CommandSender sender;
+    protected String senderName = "Console";
+    protected Player player;
+    protected boolean isPlayer = false;
     // Set this class if banning
-    public String target = "";
-    public String targetIP = "";
+    protected String target = "";
+    protected String targetIP = "";
 
     // Set extend class constructor
-    public String name;
-    public int argLength = 0;
-    public String usage;
-    public boolean bePlayer = false;
-    public boolean banning = false;
+    protected String name;
+    protected int argLength = 0;
+    protected String usage;
+    protected boolean bePlayer = false;
+    protected boolean banning = false;
 
-    public boolean run(BukkitInterface plugin, CommandSender sender, String cmd, String[] preArgs) {
+    public boolean run(final BukkitInterface plugin, final CommandSender sender, final String cmd, final String[] preArgs) {
         if (name == null){
             plugin.broadcastPlayer(sender, "&cThis command not loaded properly!");
             return true;
         }
 
         this.plugin = plugin;
-        this.config = plugin.Settings;
+        this.config = plugin.settings;
         this.sender = sender;
         this.command = cmd;
 
@@ -51,7 +52,7 @@ public abstract class BaseCommand {
         // Check args size
         if (argLength > args.size()){
             //sendUsage();
-            plugin.broadcastPlayer(sender, ChatColor.DARK_RED + plugin.Language.getFormat("formatError"));
+            plugin.broadcastPlayer(sender, ChatColor.DARK_RED + plugin.language.getFormat("formatError"));
             return true;
         }
 
@@ -68,7 +69,7 @@ public abstract class BaseCommand {
 
         // Check permission
         if (!permission(sender)){
-            plugin.broadcastPlayer(sender, plugin.Language.getFormat("permissionDenied"));
+            plugin.broadcastPlayer(sender, plugin.language.getFormat("permissionDenied"));
             //plugin.log(senderName + " has tried the command [" + command + "]!"); // maybe not needs command logger. Craftbukkit added this.
             //plugin.broadcastPlayer(sender, "&cYou don't have permission to use this!");
             return true;
@@ -89,15 +90,12 @@ public abstract class BaseCommand {
         try {
             execute();
         }
-        catch (Exception ex) {
+        catch (CommandException ex) {
             Throwable error = ex;
-            /*
-            TODO: change this
             while (error instanceof Exception){
-                Actions.message(sender, null, error.getMessage());
+                plugin.broadcastPlayer(sender, error.getMessage());
                 error = error.getCause();
             }
-            */
         }
 
         return true;
@@ -106,12 +104,12 @@ public abstract class BaseCommand {
     /**
      * Execute command
      */
-    public abstract void execute();
+    public abstract void execute() throws CommandException;
 
     /**
      * TabComplete
      */
-    protected List<String> tabComplete(BukkitInterface plugin, final CommandSender sender, String cmd, String[] preArgs){
+    protected List<String> tabComplete(final BukkitInterface plugin, final CommandSender sender, final String cmd, final String[] preArgs){
         return null;
     }
 
@@ -119,7 +117,7 @@ public abstract class BaseCommand {
      * Check sender has command permission
      * @return true if sender has permission
      */
-    public abstract boolean permission(CommandSender sender);
+    public abstract boolean permission(final CommandSender sender);
 
     /**
      * Send command usage

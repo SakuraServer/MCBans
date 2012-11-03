@@ -39,15 +39,15 @@ public class BukkitInterface extends JavaPlugin {
     private static BukkitInterface instance;
 
     private MCBansCommandHandler commandHandler;
-    private PlayerListener bukkitPlayer = new PlayerListener(this);
+    private PlayerListener playerListener = new PlayerListener(this);
     public int taskID = 0;
     public HashMap<String, Integer> connectionData = new HashMap<String, Integer>();
     public HashMap<String, HashMap<String, String>> playerCache = new HashMap<String, HashMap<String, String>>();
     public HashMap<String, Long> resetTime = new HashMap<String, Long>();
-    public Settings Settings;
+    public Settings settings;
     public long last_req = 0;
     public long timeRecieved = 0;
-    public Language Language = null;
+    public Language language = null;
     public Thread callbackThread = null;
     public Thread syncBan = null;
     public boolean syncRunning = false;
@@ -76,6 +76,7 @@ public class BukkitInterface extends JavaPlugin {
                 syncBan.interrupt();
             }
         }
+
         log(LogLevels.INFO, "MCBans Disabled");
     }
 
@@ -87,31 +88,29 @@ public class BukkitInterface extends JavaPlugin {
         // check online-mode
         if (!this.getServer().getOnlineMode()) {
             logger.log(LogLevels.FATAL, "MCBans: Your server is not in online mode!");
-            pm.disablePlugin(pluginInterface("mcbans"));
+            pm.disablePlugin(this);
             return;
         }
 
 
-        pm.registerEvents(bukkitPlayer, this);
+        pm.registerEvents(playerListener, this);
 
         // load configuration
-        Settings = new Settings();
-        if (Settings.exists) {
-            pm.disablePlugin(pluginInterface("mcbans"));
+        settings = new Settings();
+        if (settings.exists) {
+            pm.disablePlugin(this);
             return;
         }
-        this.apiKey = Settings.getString("apiKey");
+        this.apiKey = settings.getString("apiKey");
 
         // load language
-        String language;
-        language = Settings.getString("language");
-        log(LogLevels.INFO, "Loading language file: " + language);
-        Language = new Language(this);
+        log(LogLevels.INFO, "Loading language file: " + settings.getString("language"));
+        language = new Language(this);
 
         // Setup logging
-        if (Settings.getBoolean("logEnable")) {
+        if (settings.getBoolean("logEnable")) {
             log(LogLevels.INFO, "Starting to save to log file!");
-            actionLog = new ActionLog(this, Settings.getString("logFile"));
+            actionLog = new ActionLog(this, settings.getString("logFile"));
             actionLog.write("MCBans Log File Started");
         } else {
             log(LogLevels.INFO, "Log file disabled!");
@@ -180,7 +179,7 @@ public class BukkitInterface extends JavaPlugin {
         }
     }
 
-    public void checkPlugin(boolean startup){
+    public void checkPlugin(final boolean startup){
         // Check NoCheatPlus
         Plugin checkNCP = getServer().getPluginManager().getPlugin("NoCheatPlus");
         this.ncpEnabled = (checkNCP != null && checkNCP instanceof NoCheatPlus);
@@ -207,28 +206,28 @@ public class BukkitInterface extends JavaPlugin {
 
     public void broadcastAll(String msg) {
         for (Player player : this.getServer().getOnlinePlayers()) {
-            player.sendMessage(Settings.getPrefix() + " " + msg);
+            player.sendMessage(settings.getPrefix() + " " + msg);
         }
     }
 
     public void broadcastPlayer(final String playerName, String msg) {
         final Player target = this.getServer().getPlayer(playerName);
         if (target != null) {
-            target.sendMessage(Settings.getPrefix() + " " + msg);
+            target.sendMessage(settings.getPrefix() + " " + msg);
         } else {
-            System.out.print(Settings.getPrefix() + " " + msg);
+            System.out.print(settings.getPrefix() + " " + msg);
         }
     }
 
     public void broadcastPlayer(final Player target, String msg) {
         if (target != null && msg != null){
-            target.sendMessage(Settings.getPrefix() + " " + msg);
+            target.sendMessage(settings.getPrefix() + " " + msg);
         }
     }
 
     public void broadcastPlayer(final CommandSender target, String msg) {
         if (target != null && msg != null){
-            target.sendMessage(Settings.getPrefix() + " " + msg);
+            target.sendMessage(settings.getPrefix() + " " + msg);
         }
     }
 
@@ -246,14 +245,6 @@ public class BukkitInterface extends JavaPlugin {
 
     public RollbackHandler getRbHandler(){
         return this.rbHandler;
-    }
-
-    public MCBansCommandHandler getCmdHandler(){
-        return this.commandHandler;
-    }
-
-    public Plugin pluginInterface(String pluginName) {
-        return this.getServer().getPluginManager().getPlugin(pluginName);
     }
 
     public static BukkitInterface getInstance(){
