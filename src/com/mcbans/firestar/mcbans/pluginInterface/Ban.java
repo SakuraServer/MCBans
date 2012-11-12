@@ -10,7 +10,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import com.mcbans.firestar.mcbans.BukkitInterface;
+import com.mcbans.firestar.mcbans.I18n;
+import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.events.PlayerBanEvent;
 import com.mcbans.firestar.mcbans.events.PlayerBannedEvent;
 import com.mcbans.firestar.mcbans.events.PlayerGlobalBanEvent;
@@ -21,12 +22,14 @@ import com.mcbans.firestar.mcbans.events.PlayerUnbannedEvent;
 import com.mcbans.firestar.mcbans.org.json.JSONException;
 import com.mcbans.firestar.mcbans.org.json.JSONObject;
 import com.mcbans.firestar.mcbans.request.JsonHandler;
+import com.mcbans.firestar.mcbans.util.Util;
+import static com.mcbans.firestar.mcbans.I18n._;
 
 import fr.neatmonster.nocheatplus.checks.ViolationHistory;
 import fr.neatmonster.nocheatplus.checks.ViolationHistory.ViolationLevel;
 
 public class Ban implements Runnable {
-    private BukkitInterface plugin;
+    private MCBans plugin;
     private String playerName = null;
     private String playerIP = null;
     private String senderName = null;
@@ -40,7 +43,7 @@ public class Ban implements Runnable {
     private HashMap<String, Integer> responses = new HashMap<String, Integer>();
     private int action_id;
 
-    public Ban(BukkitInterface plugin, String action, String playerName, String playerIP, String senderName, String reason, String duration,
+    public Ban(MCBans plugin, String action, String playerName, String playerIP, String senderName, String reason, String duration,
             String measure, JSONObject actionData, boolean rollback) {
         this.plugin = plugin;
         this.playerName = playerName;
@@ -59,7 +62,7 @@ public class Ban implements Runnable {
         responses.put("unBan", 3);
     }
 
-    public Ban(BukkitInterface plugin, String action, String playerName, String playerIP, String senderName, String reason, String duration,
+    public Ban(MCBans plugin, String action, String playerName, String playerIP, String senderName, String reason, String duration,
             String measure) {
         this (plugin, action, playerName, playerIP, senderName, reason, duration, measure, null, false);
     }
@@ -68,7 +71,7 @@ public class Ban implements Runnable {
      * @deprecated Use another constructor. This constructor will be removed on future release.
      */
     @Deprecated
-    public Ban(BukkitInterface plugin, String action, String playerName, String playerIP, String senderName, String reason, String duration,
+    public Ban(MCBans plugin, String action, String playerName, String playerIP, String senderName, String reason, String duration,
             String measure, JSONObject actionData, int rollback_dummy) {
         this (plugin, action, playerName, playerIP, senderName, reason, duration, measure, actionData, true);
     }
@@ -92,7 +95,7 @@ public class Ban implements Runnable {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                if (plugin.settings.getBoolean("isDebug")) {
+                if (plugin.getConfigs().isDebug()) {
                     e.printStackTrace();
                 }
             }
@@ -133,7 +136,7 @@ public class Ban implements Runnable {
                 plugin.log("Error, caught invalid action! Another plugin using mcbans improperly?");
             }
         } catch (NullPointerException e) {
-            if (plugin.settings.getBoolean("isDebug")) {
+            if (plugin.getConfigs().isDebug()) {
                 e.printStackTrace();
             }
         }
@@ -155,8 +158,12 @@ public class Ban implements Runnable {
         url_items.put("exec", "unBan");
         HashMap<String, String> response = webHandle.mainRequest(url_items);
         try {
+            if (response.containsKey("error")){
+                Util.message(senderName, ChatColor.DARK_RED + "Error: " + response.get("error"));
+                return;
+            }
             if (!response.containsKey("result")) {
-                plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + plugin.language.getFormat("unBanMessageError", playerName, senderName));
+                Util.message(senderName, ChatColor.DARK_RED + _("unBanMessageError").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName));
                 return;
             }
             if (response.get("result").equals("y")) {
@@ -165,19 +172,19 @@ public class Ban implements Runnable {
                     d.setBanned(false);
                 }
                 plugin.log(senderName + " unbanned " + playerName + "!");
-                plugin.broadcastPlayer(senderName, ChatColor.GREEN + plugin.language.getFormat("unBanMessageSuccess", playerName, senderName));
+                Util.message(senderName, ChatColor.GREEN + _("unBanMessageSuccess").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName));
                 plugin.getServer().getPluginManager().callEvent(new PlayerUnbannedEvent(playerName, senderName));
                 return;
             } else if (response.get("result").equals("e")) {
-                plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + plugin.language.getFormat("unBanMessageError", playerName, senderName));
+                Util.message(senderName, ChatColor.DARK_RED + _("unBanMessageError").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName));
             } else if (response.get("result").equals("s")) {
-                plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + plugin.language.getFormat("unBanMessageGroup", playerName, senderName));
+                Util.message(senderName, ChatColor.DARK_RED + _("unBanMessageGroup").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName));
             } else if (response.get("result").equals("n")) {
-                plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + plugin.language.getFormat("unBanMessageNot", playerName, senderName));
+                Util.message(senderName, ChatColor.DARK_RED + _("unBanMessageNot").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName));
             }
             plugin.log(senderName + " tried to unban " + playerName + "!");
         } catch (NullPointerException e) {
-            if (plugin.settings.getBoolean("isDebug")) {
+            if (plugin.getConfigs().isDebug()) {
                 e.printStackTrace();
             }
         }
@@ -208,43 +215,52 @@ public class Ban implements Runnable {
         url_items.put("exec", "localBan");
         HashMap<String, String> response = webHandle.mainRequest(url_items);
         try {
+            if (response.containsKey("error")){
+                Util.message(senderName, ChatColor.DARK_RED + "Error: " + response.get("error"));
+                return;
+            }
             if (!response.containsKey("result")) {
-                plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
+                Util.message(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
                 OfflinePlayer d = plugin.getServer().getOfflinePlayer(playerName);
                 if (!d.isBanned()) {
                     d.setBanned(true);
                 }
-                this.kickPlayer(playerName, plugin.language.getFormat("localBanMessagePlayer", playerName, senderName, reason, playerIP));
-                // MCBans.broadcastPlayer( PlayerAdmin, ChatColor.DARK_RED +
-                // MCBans.Language.getFormat( "localBanMessageError",
-                // PlayerName, PlayerAdmin, Reason, PlayerIP ) );
+                this.kickPlayer(playerName, _("localBanMessagePlayer").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
+
                 return;
             }
             if (response.get("result").equals("y")) {
                 plugin.log(playerName + " has been banned with a local type ban [" + reason + "] [" + senderName + "]!");
-                this.kickPlayer(playerName, plugin.language.getFormat("localBanMessagePlayer", playerName, senderName, reason, playerIP));
-                plugin.broadcastAll(ChatColor.GREEN + plugin.language.getFormat("localBanMessageSuccess", playerName, senderName, reason, playerIP));
+                this.kickPlayer(playerName, _("localBanMessagePlayer").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
+                Util.broadcastMessage(ChatColor.GREEN + _("localBanMessageSuccess").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
                 plugin.getServer().getPluginManager().callEvent(new PlayerBannedEvent(playerName, playerIP, senderName, reason, action_id, duration, measure));
                 return;
             } else if (response.get("result").equals("e")) {
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("localBanMessageError", playerName, senderName, reason, playerIP));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("localBanMessageError").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
             } else if (response.get("result").equals("s")) {
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("localBanMessageGroup", playerName, senderName, reason, playerIP));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("localBanMessageGroup").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
             } else if (response.get("result").equals("a")) {
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("localBanMessageAlready", playerName, senderName, reason, playerIP));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("localBanMessageAlready").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
             }
             plugin.log(senderName + " has tried to ban " + playerName + " with a local type ban [" + reason + "]!");
         } catch (NullPointerException e) {
-            plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
+            Util.message(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
             OfflinePlayer d = plugin.getServer().getOfflinePlayer(playerName);
             if (!d.isBanned()) {
                 d.setBanned(true);
             }
-            this.kickPlayer(playerName, plugin.language.getFormat("localBanMessagePlayer", playerName, senderName, reason, playerIP));
-            if (plugin.settings.getBoolean("isDebug")) {
+            this.kickPlayer(playerName, _("localBanMessagePlayer").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                    .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
+            if (plugin.getConfigs().isDebug()) {
                 e.printStackTrace();
             }
         }
@@ -273,7 +289,7 @@ public class Ban implements Runnable {
                 actionData.put(proof.getKey(), proof.getValue());
             }
         }catch (JSONException ex){
-            if (plugin.settings.getBoolean("isDebug")) {
+            if (plugin.getConfigs().isDebug()) {
                 ex.printStackTrace();
             }
         }
@@ -287,47 +303,56 @@ public class Ban implements Runnable {
         url_items.put("exec", "globalBan");
         HashMap<String, String> response = webHandle.mainRequest(url_items);
         try {
+            if (response.containsKey("error")){
+                Util.message(senderName, ChatColor.DARK_RED + "Error: " + response.get("error"));
+                return;
+            }
             if (!response.containsKey("result")) {
-                plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
+                Util.message(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
                 OfflinePlayer d = plugin.getServer().getOfflinePlayer(playerName);
                 if (!d.isBanned()) {
                     d.setBanned(true);
                 }
-                this.kickPlayer(playerName, plugin.language.getFormat("localBanMessagePlayer", playerName, senderName, reason, playerIP));
-                // MCBans.broadcastPlayer( PlayerAdmin, ChatColor.DARK_RED +
-                // MCBans.Language.getFormat( "globalBanMessageError",
-                // PlayerName, PlayerAdmin, Reason, PlayerIP ) );
+                this.kickPlayer(playerName, _("localBanMessagePlayer").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
                 return;
             }
             if (response.get("result").equals("y")) {
                 plugin.log(playerName + " has been banned with a global type ban [" + reason + "] [" + senderName + "]!");
-                this.kickPlayer(playerName, plugin.language.getFormat("globalBanMessagePlayer", playerName, senderName, reason, playerIP));
-                plugin.broadcastAll(ChatColor.GREEN + plugin.language.getFormat("globalBanMessageSuccess", playerName, senderName, reason, playerIP));
+                this.kickPlayer(playerName, _("globalBanMessagePlayer").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
+                Util.broadcastMessage(ChatColor.GREEN + _("globalBanMessageSuccess").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
                 plugin.getServer().getPluginManager().callEvent(new PlayerBannedEvent(playerName, playerIP, senderName, reason, action_id, duration, measure));
                 return;
             } else if (response.get("result").equals("e")) {
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("globalBanMessageError", playerName, senderName, reason, playerIP));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("globalBanMessageError").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
             } else if (response.get("result").equals("w")) {
                 badword = response.get("word");
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("globalBanMessageWarning", playerName, senderName, reason, playerIP, badword));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("globalBanMessageWarning").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP).replaceAll(I18n.BADWORD, badword));
             } else if (response.get("result").equals("s")) {
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("globalBanMessageGroup", playerName, senderName, reason, playerIP));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("globalBanMessageGroup").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
             } else if (response.get("result").equals("a")) {
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("globalBanMessageAlready", playerName, senderName, reason, playerIP));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("globalBanMessageAlready").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
             }
             plugin.log(senderName + " has tried to ban " + playerName + " with a global type ban [" + reason + "]!");
         } catch (NullPointerException e) {
-            plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
+            Util.message(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
             OfflinePlayer d = plugin.getServer().getOfflinePlayer(playerName);
             if (!d.isBanned()) {
                 d.setBanned(true);
             }
-            this.kickPlayer(playerName, plugin.language.getFormat("localBanMessagePlayer", playerName, senderName, reason, playerIP));
-            if (plugin.settings.getBoolean("isDebug")) {
+            this.kickPlayer(playerName, _("localBanMessagePlayer").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                    .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
+            if (plugin.getConfigs().isDebug()) {
                 e.printStackTrace();
             }
         }
@@ -353,7 +378,7 @@ public class Ban implements Runnable {
         url_items.put("admin", senderName);
         url_items.put("duration", duration);
         url_items.put("measure", measure);
-        if (plugin.settings.getBoolean("enableTempBanRollback")) {
+        if (plugin.getConfigs().isEnableRollbackTempBan()) {
             plugin.getRbHandler().rollback(senderName, playerName);
         }
         if (actionData != null) {
@@ -362,13 +387,18 @@ public class Ban implements Runnable {
         url_items.put("exec", "tempBan");
         HashMap<String, String> response = webHandle.mainRequest(url_items);
         try {
+            if (response.containsKey("error")){
+                Util.message(senderName, ChatColor.DARK_RED + "Error: " + response.get("error"));
+                return;
+            }
             if (!response.containsKey("result")) {
-                plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
+                Util.message(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
                 OfflinePlayer d = plugin.getServer().getOfflinePlayer(playerName);
                 if (!d.isBanned()) {
                     d.setBanned(true);
                 }
-                this.kickPlayer(playerName, plugin.language.getFormat("localBanMessagePlayer", playerName, senderName, reason, playerIP));
+                this.kickPlayer(playerName, _("localBanMessagePlayer").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
                 // MCBans.broadcastPlayer( PlayerAdmin, ChatColor.DARK_RED +
                 // MCBans.Language.getFormat( "tempBanMessageError", PlayerName,
                 // PlayerAdmin, Reason, PlayerIP ) );
@@ -376,29 +406,35 @@ public class Ban implements Runnable {
             }
             if (response.get("result").equals("y")) {
                 plugin.log(playerName + " has been banned with a temp type ban [" + reason + "] [" + senderName + "]!");
-                this.kickPlayer(playerName, plugin.language.getFormat("tempBanMessagePlayer", playerName, senderName, reason, playerIP));
-                plugin.broadcastAll(ChatColor.GREEN + plugin.language.getFormat("tempBanMessageSuccess", playerName, senderName, reason, playerIP));
+                this.kickPlayer(playerName, _("tempBanMessagePlayer").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
+                Util.broadcastMessage(ChatColor.GREEN + _("tempBanMessageSuccess").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
                 plugin.getServer().getPluginManager().callEvent(new PlayerBannedEvent(playerName, playerIP, senderName, reason, action_id, duration, measure));
                 return;
             } else if (response.get("result").equals("e")) {
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("tempBanMessageError", playerName, senderName, reason, playerIP));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("tempBanMessageError").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
             } else if (response.get("result").equals("s")) {
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("tempBanMessageGroup", playerName, senderName, reason, playerIP));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("tempBanMessageGroup").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
             } else if (response.get("result").equals("a")) {
-                plugin.broadcastPlayer(senderName,
-                        ChatColor.DARK_RED + plugin.language.getFormat("tempBanMessageAlready", playerName, senderName, reason, playerIP));
+                Util.message(senderName,
+                        ChatColor.DARK_RED + _("tempBanMessageAlready").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                        .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
             }
             plugin.log(senderName + " has tried to ban " + playerName + " with a temp type ban [" + reason + "]!");
         } catch (NullPointerException e) {
-            plugin.broadcastPlayer(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
+            Util.message(senderName, ChatColor.DARK_RED + " MCBans down, adding local ban, unban with /pardon");
             OfflinePlayer d = plugin.getServer().getOfflinePlayer(playerName);
             if (!d.isBanned()) {
                 d.setBanned(true);
             }
-            this.kickPlayer(playerName, plugin.language.getFormat("localBanMessagePlayer", playerName, senderName, reason, playerIP));
-            if (plugin.settings.getBoolean("isDebug")) {
+            this.kickPlayer(playerName, _("localBanMessagePlayer").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName)
+                    .replaceAll(I18n.REASON, reason).replaceAll(I18n.PLAYERIP, playerIP));
+            if (plugin.getConfigs().isDebug()) {
                 e.printStackTrace();
             }
         }

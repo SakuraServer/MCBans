@@ -8,14 +8,16 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.mcbans.firestar.mcbans.BukkitInterface;
-import com.mcbans.firestar.mcbans.Settings;
+import com.mcbans.firestar.mcbans.ConfigurationManager;
+import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.exception.CommandException;
+import com.mcbans.firestar.mcbans.util.Util;
+import static com.mcbans.firestar.mcbans.I18n._;
 
 public abstract class BaseCommand {
     // Set this class
-    protected BukkitInterface plugin;
-    protected Settings config;
+    protected MCBans plugin;
+    protected ConfigurationManager config;
     protected CommandSender sender;
     protected String command;
 
@@ -36,9 +38,9 @@ public abstract class BaseCommand {
     protected boolean bePlayer = false;
     protected boolean banning = false;
 
-    public boolean run(final BukkitInterface plugin, final CommandSender sender, final String cmd, final String[] preArgs) {
+    public boolean run(final MCBans plugin, final CommandSender sender, final String cmd, final String[] preArgs) {
         if (name == null){
-            plugin.broadcastPlayer(sender, "&cThis command not loaded properly!");
+            Util.message(sender, "&cThis command not loaded properly!");
             return true;
         }
 
@@ -46,7 +48,7 @@ public abstract class BaseCommand {
         init();
 
         this.plugin = plugin;
-        this.config = plugin.settings;
+        this.config = plugin.getConfigs();
         this.sender = sender;
         this.command = cmd;
 
@@ -58,13 +60,13 @@ public abstract class BaseCommand {
         // Check args size
         if (argLength > args.size()){
             //sendUsage();
-            plugin.broadcastPlayer(sender, ChatColor.DARK_RED + plugin.language.getFormat("formatError"));
+            Util.message(sender, ChatColor.DARK_RED + _("formatError"));
             return true;
         }
 
         // Check sender is player
         if (bePlayer && !(sender instanceof Player)){
-            plugin.broadcastPlayer(sender, "&cThis command cannot run from Console!");
+            Util.message(sender, "&cThis command cannot run from Console!");
             return true;
         }
         if (sender instanceof Player){
@@ -75,7 +77,7 @@ public abstract class BaseCommand {
 
         // Check permission
         if (!permission(sender)){
-            plugin.broadcastPlayer(sender, plugin.language.getFormat("permissionDenied"));
+            Util.message(sender, _("permissionDenied"));
             //plugin.log(senderName + " has tried the command [" + command + "]!"); // maybe not needs command logger. Craftbukkit added this.
             //plugin.broadcastPlayer(sender, "&cYou don't have permission to use this!");
             return true;
@@ -99,7 +101,7 @@ public abstract class BaseCommand {
         catch (CommandException ex) {
             Throwable error = ex;
             while (error instanceof Exception){
-                plugin.broadcastPlayer(sender, error.getMessage());
+                Util.message(sender, error.getMessage());
                 error = error.getCause();
             }
         }
@@ -128,7 +130,7 @@ public abstract class BaseCommand {
     /**
      * TabComplete
      */
-    protected List<String> tabComplete(final BukkitInterface plugin, final CommandSender sender, final String cmd, final String[] preArgs){
+    protected List<String> tabComplete(final MCBans plugin, final CommandSender sender, final String cmd, final String[] preArgs){
         return null;
     }
 

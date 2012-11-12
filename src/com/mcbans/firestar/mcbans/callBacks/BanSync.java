@@ -12,22 +12,22 @@ import java.util.HashMap;
 
 import org.bukkit.OfflinePlayer;
 
-import com.mcbans.firestar.mcbans.BukkitInterface;
+import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.org.json.JSONException;
 import com.mcbans.firestar.mcbans.org.json.JSONObject;
 import com.mcbans.firestar.mcbans.request.JsonHandler;
 
 public class BanSync implements Runnable {
-    private final BukkitInterface plugin;
+    private final MCBans plugin;
 
-    public BanSync(BukkitInterface plugin){
+    public BanSync(MCBans plugin){
         this.plugin = plugin;
         this.load();
     }
     @Override
     public void run(){
         while(true){
-            int syncInterval = ((60*1000)*plugin.settings.getInteger("syncInterval"));
+            int syncInterval = ((60*1000)*plugin.getConfigs().getSyncInterval());
             if(syncInterval<((60*1000)*5)){
                 syncInterval=((60*1000)*5);
             }
@@ -105,11 +105,11 @@ public class BanSync implements Runnable {
                     goNext = false;
                 }
             } catch (JSONException e) {
-                if(plugin.settings.getBoolean("isDebug")){
+                if(plugin.getConfigs().isDebug()){
                     e.printStackTrace();
                 }
             } catch (NullPointerException e) {
-                if(plugin.settings.getBoolean("isDebug")){
+                if(plugin.getConfigs().isDebug()){
                     e.printStackTrace();
                 }
             }
@@ -172,11 +172,11 @@ public class BanSync implements Runnable {
                     goNext = false;
                 }
             } catch (NullPointerException e) {
-                if(plugin.settings.getBoolean("isDebug")){
+                if(plugin.getConfigs().isDebug()){
                     e.printStackTrace();
                 }
             } catch (JSONException e) {
-                if(plugin.settings.getBoolean("isDebug")){
+                if(plugin.getConfigs().isDebug()){
                     e.printStackTrace();
                 }
             }
@@ -204,7 +204,7 @@ public class BanSync implements Runnable {
             fout.close();
             writer.close();
         } catch (Exception e) {
-            if(plugin.settings.getBoolean("isDebug")){
+            if(plugin.getConfigs().isDebug()){
                 e.printStackTrace();
             }
         }
@@ -226,7 +226,7 @@ public class BanSync implements Runnable {
             i.close();
             plugin.lastID=Integer.valueOf(strLine);
         } catch (Exception e) {
-            if(plugin.settings.getBoolean("isDebug")){
+            if(plugin.getConfigs().isDebug()){
                 e.printStackTrace();
             }
         }

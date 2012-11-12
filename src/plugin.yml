@@ -1,7 +1,7 @@
 ##  Plugin Information  ##
 name: mcbans
-main: com.mcbans.firestar.mcbans.BukkitInterface
-version: 3.9
+main: com.mcbans.firestar.mcbans.MCBans
+version: 4.0-SNAPSHOT
 description: A global banning solution
 website: http://mcbans.com/
 softdepend: [NoCheatPlus, AntiCheat, LogBlock, HawkEye, CoreProtect, Vault, PermissionsEx]
@@ -13,8 +13,9 @@ commands:
   ban:
     description: ban a user
     usage: /<command> <playername> [g/t/reason] [reason]
-  gban:
+  globalban:
     description: global bans a user
+    aliases: [gban]
     usage: /<command> <playername> [reason]
   rban:
     description: roll back bans

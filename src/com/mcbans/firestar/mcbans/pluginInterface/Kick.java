@@ -3,20 +3,20 @@ package com.mcbans.firestar.mcbans.pluginInterface;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-import com.mcbans.firestar.mcbans.BukkitInterface;
-import com.mcbans.firestar.mcbans.Settings;
+import com.mcbans.firestar.mcbans.I18n;
+import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.events.PlayerKickEvent;
+import com.mcbans.firestar.mcbans.util.Util;
+import static com.mcbans.firestar.mcbans.I18n._;
 
 @SuppressWarnings("unused")
 public class Kick implements Runnable {
-    private Settings settings;
-    private BukkitInterface plugin;
+    private MCBans plugin;
     private String playerName = null;
     private String senderName = null;
     private String reason = null;
 
-    public Kick(Settings settings, BukkitInterface plugin, String playerName, String senderName, String reason) {
-        this.settings = settings;
+    public Kick(MCBans plugin, String playerName, String senderName, String reason) {
         this.plugin = plugin;
         this.playerName = playerName;
         this.senderName = senderName;
@@ -46,18 +46,13 @@ public class Kick implements Runnable {
             plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
                 @Override
                 public void run() {
-                    player.kickPlayer(plugin.language.getFormat("kickMessagePlayer", player.getName(), senderName, reason));
+                    player.kickPlayer(_("kickMessagePlayer").replaceAll(I18n.PLAYER, player.getName()).replaceAll(I18n.SENDER, senderName).replaceAll(I18n.REASON, reason));
                 }
             }, 1L);
-            plugin.broadcastAll(ChatColor.GREEN
-                    + plugin.language.getFormat("kickMessageBroadcast", playerName, senderName, reason, "%ADMIN% has kicked %PLAYER% [%REASON%]",
-                            true));
+            Util.broadcastMessage(ChatColor.GREEN
+                    + _("kickMessageBroadcast").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.SENDER, senderName).replaceAll(I18n.REASON, reason));
         } else {
-            plugin.broadcastPlayer(
-                    senderName,
-                    ChatColor.DARK_RED
-                    + plugin.language.getFormat("kickMessageNoPlayer", playerName, senderName, reason, "No player with that name online!",
-                            true));
+            Util.message(senderName, ChatColor.DARK_RED + _("kickMessageNoPlayer").replaceAll(I18n.PLAYER, playerName));
         }
     }
 }

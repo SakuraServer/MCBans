@@ -4,14 +4,15 @@ import java.util.HashMap;
 
 import org.bukkit.ChatColor;
 
-import com.mcbans.firestar.mcbans.BukkitInterface;
+import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.request.JsonHandler;
+import com.mcbans.firestar.mcbans.util.Util;
 
 public class Ping implements Runnable {
-    private final BukkitInterface plugin;
+    private final MCBans plugin;
     private String commandSend = "";
 
-    public Ping(BukkitInterface plugin, String sender) {
+    public Ping(MCBans plugin, String sender) {
         this.plugin = plugin;
         this.commandSend = sender;
     }
@@ -32,10 +33,10 @@ public class Ping implements Runnable {
         String urlReq = webHandle.urlparse(items);
         String jsonText = webHandle.request_from_api(urlReq);
         if (jsonText.equals("up")) {
-            plugin.broadcastPlayer(commandSend, ChatColor.GREEN + "API Server response time " + ((System.currentTimeMillis()) - pingTime)
+            Util.message(commandSend, ChatColor.GREEN + "API Server response time " + ((System.currentTimeMillis()) - pingTime)
                     + " milliseconds!");
         } else {
-            plugin.broadcastPlayer(commandSend, ChatColor.RED + "API appears to be down!");
+            Util.message(commandSend, ChatColor.RED + "API appears to be down!");
         }
 
     }

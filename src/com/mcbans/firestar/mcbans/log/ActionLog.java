@@ -10,26 +10,26 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.mcbans.firestar.mcbans.BukkitInterface;
+import com.mcbans.firestar.mcbans.MCBans;
 
 public class ActionLog {
     private static String logFile = "";
-    private static BukkitInterface plugin = null;
+    private static MCBans plugin = null;
     private final static DateFormat df = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss ");
 
-    public ActionLog(BukkitInterface p, String logfile) {
+    public ActionLog(MCBans p, String logfile) {
         logFile = logfile;
         plugin = p;
     }
 
     public void write(String msg) {
-        if (plugin.settings.getBoolean("logEnable")) {
+        if (plugin.getConfigs().isEnableLog()) {
             write(logFile, msg);
         }
     }
 
     public void write(Exception e) {
-        if (plugin.settings.getBoolean("logEnable")) {
+        if (plugin.getConfigs().isEnableLog()) {
             write(logFile, stack2string(e));
         }
         plugin.log(stack2string(e));

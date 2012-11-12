@@ -9,6 +9,7 @@ import com.mcbans.firestar.mcbans.org.json.JSONObject;
 import com.mcbans.firestar.mcbans.permission.Perms;
 import com.mcbans.firestar.mcbans.pluginInterface.Ban;
 import com.mcbans.firestar.mcbans.util.Util;
+import static com.mcbans.firestar.mcbans.I18n._;
 
 public class CommandRban extends BaseCommand{
     public CommandRban(){
@@ -38,14 +39,14 @@ public class CommandRban extends BaseCommand{
 
         // check permission
         if (!type.getPermission().has(sender)){
-            throw new CommandException(ChatColor.DARK_RED + plugin.language.getFormat("permissionDenied"));
+            throw new CommandException(ChatColor.DARK_RED + _("permissionDenied"));
         }
 
         String reason = null;
         Ban banControl = null;
         switch (type){
             case LOCAL:
-                reason = config.getString("defaultLocal");
+                reason = config.getDefaultLocal();
                 if (args.size() > 0){
                     reason = Util.join(args, " ");
                 }
@@ -54,7 +55,7 @@ public class CommandRban extends BaseCommand{
 
             case GLOBAL:
                 if (args.size() == 0){
-                    plugin.broadcastPlayer(sender, ChatColor.DARK_RED + plugin.language.getFormat("formatError"));
+                    Util.message(sender, ChatColor.DARK_RED + _("formatError"));
                     return;
                 }
                 reason = Util.join(args, " ");
@@ -63,12 +64,12 @@ public class CommandRban extends BaseCommand{
 
             case TEMP:
                 if (args.size() <= 2){
-                    plugin.broadcastPlayer(sender, ChatColor.DARK_RED + plugin.language.getFormat("formatError"));
+                    Util.message(sender, ChatColor.DARK_RED + _("formatError"));
                     return;
                 }
                 final String duration = args.remove(0);
                 final String measure = args.remove(0);
-                reason = config.getString("defaultTemp");
+                reason = config.getDefaultTemp();
                 if (args.size() > 0){
                     reason = Util.join(args, " ");
                 }
@@ -78,7 +79,7 @@ public class CommandRban extends BaseCommand{
 
         // Start
         if (banControl == null){
-            plugin.broadcastPlayer(sender, ChatColor.DARK_RED + "Internal error! Please report console logs!");
+            Util.message(sender, ChatColor.DARK_RED + "Internal error! Please report console logs!");
             throw new RuntimeException("Undefined BanType: " + type.name());
         }
         Thread triggerThread = new Thread(banControl);

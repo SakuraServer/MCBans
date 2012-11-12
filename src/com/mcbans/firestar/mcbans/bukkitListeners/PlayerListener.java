@@ -16,15 +16,18 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import com.mcbans.firestar.mcbans.BukkitInterface;
+import com.mcbans.firestar.mcbans.MCBans;
+import com.mcbans.firestar.mcbans.I18n;
 import com.mcbans.firestar.mcbans.log.LogLevels;
 import com.mcbans.firestar.mcbans.permission.Perms;
 import com.mcbans.firestar.mcbans.pluginInterface.Disconnect;
+import com.mcbans.firestar.mcbans.util.Util;
+import static com.mcbans.firestar.mcbans.I18n._;
 
 public class PlayerListener implements Listener {
-    private BukkitInterface plugin;
+    private MCBans plugin;
 
-    public PlayerListener(final BukkitInterface plugin) {
+    public PlayerListener(final MCBans plugin) {
         this.plugin = plugin;
     }
 
@@ -44,7 +47,7 @@ public class PlayerListener implements Listener {
                 }
             }
             if (check <= 5) {
-                URL urlMCBans = new URL("http://" + plugin.apiServer + "/v2/" + plugin.getApiKey() + "/login/"
+                URL urlMCBans = new URL("http://" + plugin.apiServer + "/v2/" + plugin.getConfigs().getApiKey() + "/login/"
                         + URLEncoder.encode(event.getName(), "UTF-8") + "/"
                         + URLEncoder.encode(String.valueOf(event.getAddress().getHostAddress()), "UTF-8"));
                 BufferedReader bufferedreaderMCBans = new BufferedReader(new InputStreamReader(urlMCBans.openStream()));
@@ -53,8 +56,8 @@ public class PlayerListener implements Listener {
                 bufferedreaderMCBans.close();
                 if (s2 != null) {
                     String[] s3 = s2.split(";");
-                    double repMin = plugin.settings.getDouble("minRep");
-                    int maxAlts = plugin.settings.getInteger("maxAlts");
+                    double repMin = plugin.getConfigs().getMinRep();
+                    int maxAlts = plugin.getConfigs().getMaxAlts();
                     if (s3.length == 6) {
                         if (s3[0].equals("l") || s3[0].equals("g") || s3[0].equals("t") || s3[0].equals("i") || s3[0].equals("s")) {
                             event.disallow(Result.KICK_BANNED, s3[1]);
@@ -82,7 +85,7 @@ public class PlayerListener implements Listener {
                             }
                             plugin.playerCache.put(event.getName(),tmp);
                         }
-                        if (plugin.settings.getBoolean("isDebug")) {
+                        if (plugin.getConfigs().isDebug()) {
                             System.out.println("[MCBans] " + event.getName() + " authenticated with " + s3[2] + " rep");
                         }
                     }else{
@@ -110,10 +113,10 @@ public class PlayerListener implements Listener {
             // Modify
             if (!Perms.has(event.getPlayer(), "ignoreBroadcastLowRep")){
                 //MCBans.broadcastAll("プレイヤー'" + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + "'は" + ChatColor.DARK_RED + response.getString("totalBans") + "つのBAN" + ChatColor.WHITE + "を受けています" + ChatColor.AQUA + "(" + response.getString("playerRep") + " REP)" );
-                plugin.broadcastAll( ChatColor.RED + plugin.language.getFormat( "previousBans", playerName ) );
+                Util.broadcastMessage(ChatColor.RED + _("previousBans").replaceAll(I18n.PLAYER, playerName));
             }else{
                 //MCBans.broadcastJoinView( "Player " + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + " has " + ChatColor.DARK_RED + response.getString("totalBans") + " ban(s)" + ChatColor.WHITE + " and " + ChatColor.AQUA + response.getString("playerRep") + " REP" + ChatColor.WHITE + "." );
-                Perms.VIEW_BANS.message(ChatColor.DARK_RED + plugin.language.getFormat( "previousBans", playerName ));
+            	Perms.VIEW_BANS.message(ChatColor.DARK_RED + _("previousBans").replaceAll(I18n.PLAYER, playerName));
             }
             // older codes
             /*
@@ -139,15 +142,15 @@ public class PlayerListener implements Listener {
             */
         }
         if(pcache.containsKey("d")){
-            plugin.broadcastPlayer(playerName, ChatColor.DARK_RED + pcache.get("d") + " open disputes!");
+            Util.message(playerName, ChatColor.DARK_RED + pcache.get("d") + " open disputes!");
         }
         if(pcache.containsKey("a")){
-            Perms.VIEW_ALTS.message(ChatColor.DARK_PURPLE + plugin.language.getFormatAlts("altAccounts", playerName, pcache.get("al").toString()));
+            Perms.VIEW_ALTS.message(ChatColor.DARK_PURPLE + _("altAccounts").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.ALTS, pcache.get("al").toString()));
         }
         if(pcache.containsKey("m")){
             plugin.log( LogLevels.INFO, playerName + " is a MCBans.com Staff member");
-            plugin.broadcastAll(ChatColor.AQUA + plugin.language.getFormat("isMCBansMod", playerName));
-            plugin.broadcastPlayer(playerName, ChatColor.AQUA + plugin.language.getFormat ("youAreMCBansStaff"));
+            Util.broadcastMessage(ChatColor.AQUA + _("isMCBansMod").replaceAll(I18n.PLAYER, playerName));
+            Util.message(playerName, ChatColor.AQUA + _("youAreMCBansStaff"));
         }
     }
 

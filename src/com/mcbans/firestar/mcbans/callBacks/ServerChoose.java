@@ -2,13 +2,13 @@ package com.mcbans.firestar.mcbans.callBacks;
 
 import java.util.HashMap;
 
-import com.mcbans.firestar.mcbans.BukkitInterface;
+import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.request.JsonHandler;
 
-public class serverChoose implements Runnable {
-    private final BukkitInterface plugin;
+public class ServerChoose implements Runnable {
+    private final MCBans plugin;
 
-    public serverChoose(BukkitInterface plugin) {
+    public ServerChoose(MCBans plugin) {
         this.plugin = plugin;
     }
 
@@ -17,7 +17,7 @@ public class serverChoose implements Runnable {
         plugin.notSelectedServer = true;
         plugin.log("Looking for fastest api server!");
         long d = 99999;
-        for (String server : plugin.apiServers.split(",")) {
+        for (String server : plugin.apiServers) {
             try {
                 long pingTime = (System.currentTimeMillis());
                 JsonHandler webHandle = new JsonHandler(plugin);

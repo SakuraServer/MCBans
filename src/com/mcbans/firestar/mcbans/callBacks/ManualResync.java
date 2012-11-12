@@ -9,22 +9,23 @@ import java.util.HashMap;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 
-import com.mcbans.firestar.mcbans.BukkitInterface;
+import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.org.json.JSONException;
 import com.mcbans.firestar.mcbans.org.json.JSONObject;
 import com.mcbans.firestar.mcbans.request.JsonHandler;
+import com.mcbans.firestar.mcbans.util.Util;
 
 public class ManualResync implements Runnable {
-    private final BukkitInterface plugin;
+    private final MCBans plugin;
     private String commandSend = "";
-    public ManualResync(BukkitInterface plugin, String sender){
+    public ManualResync(MCBans plugin, String sender){
         this.plugin = plugin;
         this.commandSend = sender;
     }
     @Override
     public void run() {
         if(plugin.syncRunning==true){
-            plugin.broadcastPlayer(commandSend, ChatColor.GREEN + " Sync already in progress!" );
+            Util.message(commandSend, ChatColor.GREEN + " Sync already in progress!" );
             return;
         }
         plugin.syncRunning = true;
@@ -73,11 +74,11 @@ public class ManualResync implements Runnable {
                     goNext = false;
                 }
             } catch (JSONException e) {
-                if(plugin.settings.getBoolean("isDebug")){
+                if(plugin.getConfigs().isDebug()){
                     e.printStackTrace();
                 }
             } catch (NullPointerException e) {
-                if(plugin.settings.getBoolean("isDebug")){
+                if(plugin.getConfigs().isDebug()){
                     e.printStackTrace();
                 }
             }
@@ -95,7 +96,7 @@ public class ManualResync implements Runnable {
             }
         }
         plugin.syncRunning = false;
-        plugin.broadcastPlayer(commandSend, ChatColor.GREEN + " Sync finished" );
+        Util.message(commandSend, ChatColor.GREEN + " Sync finished" );
         this.save();
     }
     public void save(){
@@ -107,7 +108,7 @@ public class ManualResync implements Runnable {
             fout.close();
             writer.close();
         } catch (Exception e) {
-            if(plugin.settings.getBoolean("isDebug")){
+            if(plugin.getConfigs().isDebug()){
                 e.printStackTrace();
             }
         }
