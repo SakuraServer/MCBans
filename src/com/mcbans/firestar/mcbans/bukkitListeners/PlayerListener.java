@@ -16,9 +16,9 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import com.mcbans.firestar.mcbans.ActionLog;
 import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.I18n;
-import com.mcbans.firestar.mcbans.log.LogLevels;
 import com.mcbans.firestar.mcbans.permission.Perms;
 import com.mcbans.firestar.mcbans.pluginInterface.Disconnect;
 import com.mcbans.firestar.mcbans.util.Util;
@@ -26,9 +26,11 @@ import static com.mcbans.firestar.mcbans.I18n._;
 
 public class PlayerListener implements Listener {
     private MCBans plugin;
+    private ActionLog log;
 
     public PlayerListener(final MCBans plugin) {
         this.plugin = plugin;
+        this.log = plugin.getLog();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -52,13 +54,13 @@ public class PlayerListener implements Listener {
                         + URLEncoder.encode(String.valueOf(event.getAddress().getHostAddress()), "UTF-8"));
                 BufferedReader bufferedreaderMCBans = new BufferedReader(new InputStreamReader(urlMCBans.openStream()));
                 String s2 = bufferedreaderMCBans.readLine();
-                System.out.println(s2);
+                log.info(s2);
                 bufferedreaderMCBans.close();
                 if (s2 != null) {
                     String[] s3 = s2.split(";");
                     double repMin = plugin.getConfigs().getMinRep();
                     int maxAlts = plugin.getConfigs().getMaxAlts();
-                    if (s3.length == 6) {
+                    if (s3.length == 6 || s3.length == 7) {
                         if (s3[0].equals("l") || s3[0].equals("g") || s3[0].equals("t") || s3[0].equals("i") || s3[0].equals("s")) {
                             event.disallow(Result.KICK_BANNED, s3[1]);
                             return;
@@ -86,10 +88,10 @@ public class PlayerListener implements Listener {
                             plugin.playerCache.put(event.getName(),tmp);
                         }
                         if (plugin.getConfigs().isDebug()) {
-                            System.out.println("[MCBans] " + event.getName() + " authenticated with " + s3[2] + " rep");
+                            log.info(event.getName() + " authenticated with " + s3[2] + " rep");
                         }
                     }else{
-                        plugin.log( LogLevels.WARNING, "Invalid response! (Player: " + event.getName() + ")");
+                        log.warning("Invalid response! (Player: " + event.getName() + ")");
                     }
                 }
             }
@@ -148,7 +150,7 @@ public class PlayerListener implements Listener {
             Perms.VIEW_ALTS.message(ChatColor.DARK_PURPLE + _("altAccounts").replaceAll(I18n.PLAYER, playerName).replaceAll(I18n.ALTS, pcache.get("al").toString()));
         }
         if(pcache.containsKey("m")){
-            plugin.log( LogLevels.INFO, playerName + " is a MCBans.com Staff member");
+            log.info(playerName + " is a MCBans.com Staff member");
             Util.broadcastMessage(ChatColor.AQUA + _("isMCBansMod").replaceAll(I18n.PLAYER, playerName));
             Util.message(playerName, ChatColor.AQUA + _("youAreMCBansStaff"));
         }
