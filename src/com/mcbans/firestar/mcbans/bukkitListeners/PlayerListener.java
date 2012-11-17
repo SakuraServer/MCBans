@@ -9,6 +9,7 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -18,6 +19,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import com.mcbans.firestar.mcbans.ActionLog;
+import com.mcbans.firestar.mcbans.ConfigurationManager;
 import com.mcbans.firestar.mcbans.I18n;
 import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.permission.Perms;
@@ -27,10 +29,12 @@ import com.mcbans.firestar.mcbans.util.Util;
 public class PlayerListener implements Listener {
     private final MCBans plugin;
     private final ActionLog log;
+    private final ConfigurationManager config;
 
     public PlayerListener(final MCBans plugin) {
         this.plugin = plugin;
         this.log = plugin.getLog();
+        this.config = plugin.getConfigs();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -50,7 +54,7 @@ public class PlayerListener implements Listener {
             }
 
             // get player information
-            final URL urlMCBans = new URL("http://" + plugin.apiServer + "/v2/" + plugin.getConfigs().getApiKey() + "/login/"
+            final URL urlMCBans = new URL("http://" + plugin.apiServer + "/v2/" + config.getApiKey() + "/login/"
                     + URLEncoder.encode(event.getName(), "UTF-8") + "/"
                     + URLEncoder.encode(String.valueOf(event.getAddress().getHostAddress()), "UTF-8"));
             BufferedReader br = null;
@@ -75,12 +79,12 @@ public class PlayerListener implements Listener {
                     return;
                 }
                 // check reputation
-                else if (plugin.getConfigs().getMinRep() > Double.valueOf(s[2])) {
+                else if (config.getMinRep() > Double.valueOf(s[2])) {
                     event.disallow(Result.KICK_BANNED, "Reputation too low!");
                     return;
                 }
                 // check alternate accounts
-                else if (plugin.getConfigs().getMaxAlts() < Integer.valueOf(s[3])) {
+                else if (config.isEnableMaxAlts() && config.getMaxAlts() < Integer.valueOf(s[3])) {
                     event.disallow(Result.KICK_BANNED, "You have too many alternate accounts!");
                     return;
                 }
@@ -115,54 +119,32 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerJoin(final PlayerJoinEvent event) {
-        String playerName = event.getPlayer().getName();
-        HashMap<String,String> pcache = plugin.playerCache.remove(playerName);
-        if(pcache == null) return;
-        if(pcache.containsKey("b")){
-            //MCBans.broadcastPlayer(playerName, ChatColor.DARK_RED + "You have bans on record! ( check http://mcbans.com )" );
-            //MCBans.broadcastJoinView( ChatColor.DARK_RED + MCBans.Language.getFormat( "previousBans", playerName ) );
+        final Player player = event.getPlayer();
 
-            // Modify
+        final HashMap<String,String> pcache = plugin.playerCache.remove(player.getName());
+        if(pcache == null) return;
+
+        if(pcache.containsKey("b")){
+            if (config.isEnableSendPreviousBans())
+                Util.message(player, ChatColor.DARK_RED + "You have bans on record! ( check http://mcbans.com )" );
             if (!Perms.has(event.getPlayer(), "ignoreBroadcastLowRep")){
                 //MCBans.broadcastAll("プレイヤー'" + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + "'は" + ChatColor.DARK_RED + response.getString("totalBans") + "つのBAN" + ChatColor.WHITE + "を受けています" + ChatColor.AQUA + "(" + response.getString("playerRep") + " REP)" );
-                Util.broadcastMessage(ChatColor.RED + _("previousBans", I18n.PLAYER, playerName));
+                Util.broadcastMessage(ChatColor.RED + _("previousBans", I18n.PLAYER, player.getName()));
             }else{
                 //MCBans.broadcastJoinView( "Player " + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + " has " + ChatColor.DARK_RED + response.getString("totalBans") + " ban(s)" + ChatColor.WHITE + " and " + ChatColor.AQUA + response.getString("playerRep") + " REP" + ChatColor.WHITE + "." );
-            	Perms.VIEW_BANS.message(ChatColor.DARK_RED + _("previousBans", I18n.PLAYER, playerName));
+                Perms.VIEW_BANS.message(ChatColor.DARK_RED + _("previousBans", I18n.PLAYER, player.getName()));
             }
-            // older codes
-            /*
-            if (response.getJSONArray("globalBans").length() > 0 && MCBans.Settings.getBoolean("onConnectGlobals")) {
-                // Modify
-                if (!MCBans.Permissions.isAllow(PlayerName, "ignoreBroadcastLowRep")){
-                    MCBans.broadcastAll("プレイヤー'" + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + "'は" + ChatColor.DARK_RED + response.getString("totalBans") + "つのBAN" + ChatColor.WHITE + "を受けています" + ChatColor.AQUA + "(" + response.getString("playerRep") + " REP)" );
-                }else{
-                    MCBans.broadcastJoinView( "Player " + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + " has " + ChatColor.DARK_RED + response.getString("totalBans") + " ban(s)" + ChatColor.WHITE + " and " + ChatColor.AQUA + response.getString("playerRep") + " REP" + ChatColor.WHITE + "." );
-                }
-                MCBans.broadcastJoinView("--------------------------");
-                if (response.getJSONArray("globalBans").length() > 0) {
-                    for (int v = 0; v < response.getJSONArray("globalBans").length(); v++) {
-                        out = response.getJSONArray("globalBans").getString(v).split(" .:. ");
-                        if (out.length == 2) {
-                            MCBans.broadcastJoinView(ChatColor.LIGHT_PURPLE + out[0]);
-                            MCBans.broadcastJoinView("\\---\"" + ChatColor.DARK_PURPLE + out[1] + "\"");
-                        }
-                    }
-                }
-                MCBans.broadcastJoinView("--------------------------");
-            }
-            */
         }
         if(pcache.containsKey("d")){
-            Util.message(playerName, ChatColor.DARK_RED + pcache.get("d") + " open disputes!");
+            Util.message(player, ChatColor.DARK_RED + pcache.get("d") + " open disputes!");
         }
         if(pcache.containsKey("a")){
-            Perms.VIEW_ALTS.message(ChatColor.DARK_PURPLE + _("altAccounts", I18n.PLAYER, playerName, I18n.ALTS, pcache.get("al")));
+            Perms.VIEW_ALTS.message(ChatColor.DARK_PURPLE + _("altAccounts", I18n.PLAYER, player.getName(), I18n.ALTS, pcache.get("al")));
         }
         if(pcache.containsKey("m")){
-            log.info(playerName + " is a MCBans.com Staff member");
-            Util.broadcastMessage(ChatColor.AQUA + _("isMCBansMod", I18n.PLAYER, playerName));
-            Util.message(playerName, ChatColor.AQUA + _("youAreMCBansStaff"));
+            log.info(player.getName() + " is a MCBans Staff member");
+            Util.broadcastMessage(ChatColor.AQUA + _("isMCBansMod", I18n.PLAYER, player.getName()));
+            Util.message(player, ChatColor.AQUA + "You are a MCBans Staff Member! (ver " + plugin.getDescription().getVersion() + ")");
         }
     }
 
