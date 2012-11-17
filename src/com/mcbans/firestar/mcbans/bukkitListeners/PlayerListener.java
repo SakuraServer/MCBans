@@ -48,7 +48,13 @@ public class PlayerListener implements Listener {
                 } catch (InterruptedException e) {}
                 check++;
                 if (check > 5) {
-                    log.warning("Can't reach MCBans API Servers! Check passed player: " + event.getName());
+                    // can't reach mcbans servers
+                    if (config.isFailsafe()){
+                        log.warning("Can't reach MCBans API Servers! Kicked player: " + event.getName());
+                        event.disallow(Result.KICK_BANNED, _("unavailable"));
+                    }else{
+                        log.warning("Can't reach MCBans API Servers! Check passed player: " + event.getName());
+                    }
                     return;
                 }
             }
@@ -66,7 +72,12 @@ public class PlayerListener implements Listener {
                 if (br != null) br.close();
             }
             if (response == null){
-                log.warning("Null response! (Player: " + event.getName() + ")");
+                if (config.isFailsafe()){
+                    log.warning("Null response! Kicked player: " + event.getName());
+                    event.disallow(Result.KICK_BANNED, _("unavailable"));
+                }else{
+                    log.warning("Null response! Check passed player: " + event.getName());
+                }
                 return;
             }
 
@@ -80,12 +91,12 @@ public class PlayerListener implements Listener {
                 }
                 // check reputation
                 else if (config.getMinRep() > Double.valueOf(s[2])) {
-                    event.disallow(Result.KICK_BANNED, "Reputation too low!");
+                    event.disallow(Result.KICK_BANNED, _("underMinRep"));
                     return;
                 }
                 // check alternate accounts
                 else if (config.isEnableMaxAlts() && config.getMaxAlts() < Integer.valueOf(s[3])) {
-                    event.disallow(Result.KICK_BANNED, "You have too many alternate accounts!");
+                    event.disallow(Result.KICK_BANNED, _("overMaxAlts"));
                     return;
                 }
                 // check passed, put data to playerCache
@@ -104,16 +115,27 @@ public class PlayerListener implements Listener {
                     if(Integer.parseInt(s[5])>0){
                         tmp.put("d", s[5]);
                     }
-                    plugin.playerCache.put(event.getName(),tmp);
+                    plugin.playerCache.put(event.getName(), tmp);
                 }
                 plugin.debug(event.getName() + " authenticated with " + s[2] + " rep");
             }else{
-                log.warning("Invalid response! Player: " + event.getName() + ", length: " + s.length);
+                if (config.isFailsafe()){
+                    log.warning("Invalid response!(" + s.length + ") Kicked player: " + event.getName());
+                    event.disallow(Result.KICK_BANNED, _("unavailable"));
+                }else{
+                    log.warning("Invalid response!(" + s.length + ") Check passed player: " + event.getName());
+                }
                 log.warning("Response: " + response);
+                return;
             }
         }catch (Exception ex){
             log.warning("Error occurred in AsyncPlayerPreLoginEvent. Please report this!");
             ex.printStackTrace();
+
+            if (config.isFailsafe()){
+                log.warning("Internal exception! Kicked player: " + event.getName());
+                event.disallow(Result.KICK_BANNED, _("unavailable"));
+            }
         }
     }
 
@@ -125,8 +147,8 @@ public class PlayerListener implements Listener {
         if(pcache == null) return;
 
         if(pcache.containsKey("b")){
-            if (config.isEnableSendPreviousBans())
-                Util.message(player, ChatColor.DARK_RED + "You have bans on record! ( check http://mcbans.com )" );
+            if (config.isSendPreviousBans())
+                Util.message(player, ChatColor.DARK_RED + _("bansOnRecord"));
             if (!Perms.has(event.getPlayer(), "ignoreBroadcastLowRep")){
                 //MCBans.broadcastAll("プレイヤー'" + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + "'は" + ChatColor.DARK_RED + response.getString("totalBans") + "つのBAN" + ChatColor.WHITE + "を受けています" + ChatColor.AQUA + "(" + response.getString("playerRep") + " REP)" );
                 Util.broadcastMessage(ChatColor.RED + _("previousBans", I18n.PLAYER, player.getName()));
@@ -136,7 +158,7 @@ public class PlayerListener implements Listener {
             }
         }
         if(pcache.containsKey("d")){
-            Util.message(player, ChatColor.DARK_RED + pcache.get("d") + " open disputes!");
+            Util.message(player, ChatColor.DARK_RED + _("disputes", I18n.COUNT, pcache.get("d")));
         }
         if(pcache.containsKey("a")){
             Perms.VIEW_ALTS.message(ChatColor.DARK_PURPLE + _("altAccounts", I18n.PLAYER, player.getName(), I18n.ALTS, pcache.get("al")));
