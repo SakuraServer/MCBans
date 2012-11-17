@@ -34,10 +34,8 @@ import com.mcbans.firestar.mcbans.rollback.RollbackHandler;
 import fr.neatmonster.nocheatplus.NoCheatPlus;
 
 public class MCBans extends JavaPlugin {
-
     private static MCBans instance;
 
-    private MCBansCommandHandler commandHandler;
     public int taskID = 0;
     public HashMap<String, Integer> connectionData = new HashMap<String, Integer>();
     public HashMap<String, HashMap<String, String>> playerCache = new HashMap<String, HashMap<String, String>>();
@@ -45,28 +43,21 @@ public class MCBans extends JavaPlugin {
     public long last_req = 0;
     public long timeRecieved = 0;
     public Thread callbackThread = null;
+    public BanSync bansync = null;
     public Thread syncBan = null;
-    public boolean syncRunning = false;
     public long lastID = 0;
-    public ActionLog actionLog = null;
+    public boolean syncRunning = false;
     public long lastCallBack = 0;
     public long lastSync = 0;
-    public boolean notSelectedServer = true;
-    //public String apiServersStr = "api01.cluster.mcbans.com,api02.cluster.mcbans.com,api03.cluster.mcbans.com,api.mcbans.com";
-    @SuppressWarnings("serial")
-    public List<String> apiServers = new ArrayList<String>(4) {{
-        add("api01.cluster.mcbans.com");
-        add("api02.cluster.mcbans.com");
-        add("api03.cluster.mcbans.com");
-        add("api.mcbans.com");
-    }};
-    public String apiServer = "";
+    public String apiServer = null;
+
     private ActionLog log = null;
     private RollbackHandler rbHandler = null;
     private boolean ncpEnabled = false;
     private boolean acEnabled = false;
     private MCBansAPI api;
     private ConfigurationManager config;
+    private MCBansCommandHandler commandHandler;
 
     @Override
     public void onDisable() {
@@ -128,8 +119,8 @@ public class MCBans extends JavaPlugin {
         callbackThread.start();
 
         // ban sync
-        BanSync syncBanRunner = new BanSync(this);
-        syncBan = new Thread(syncBanRunner);
+        bansync = new BanSync(this);
+        syncBan = new Thread(bansync);
         syncBan.start();
 
         ServerChoose serverChooser = new ServerChoose(this);
