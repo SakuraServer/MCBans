@@ -11,6 +11,7 @@ import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.HashMap;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -26,7 +27,7 @@ import com.mcbans.firestar.mcbans.ConfigurationManager;
 import com.mcbans.firestar.mcbans.I18n;
 import com.mcbans.firestar.mcbans.MCBans;
 import com.mcbans.firestar.mcbans.permission.Perms;
-import com.mcbans.firestar.mcbans.pluginInterface.Disconnect;
+import com.mcbans.firestar.mcbans.request.DisconnectRequest;
 import com.mcbans.firestar.mcbans.util.Util;
 
 public class PlayerListener implements Listener {
@@ -128,6 +129,11 @@ public class PlayerListener implements Listener {
                 }
                 plugin.debug(event.getName() + " authenticated with " + s[2] + " rep");
             }else{
+                if (response.toString().contains("Server Disabled")) {
+                    Util.message(Bukkit.getConsoleSender(), ChatColor.RED + "This Server Disabled by MCBans Administration!");
+                    return;
+                }
+
                 if (config.isFailsafe()){
                     log.warning("Invalid response!(" + s.length + ") Kicked player: " + event.getName());
                     event.disallow(Result.KICK_BANNED, _("unavailable"));
@@ -196,7 +202,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerQuit(final PlayerQuitEvent event) {
-        Disconnect disconnectHandler = new Disconnect(plugin, event.getPlayer().getName());
-        (new Thread(disconnectHandler)).start();
+        // send disconnect request
+        new Thread(new DisconnectRequest(plugin, event.getPlayer().getName())).start();
     }
 }
