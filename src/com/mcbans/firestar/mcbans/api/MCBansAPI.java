@@ -8,11 +8,11 @@ import org.bukkit.plugin.Plugin;
 
 import com.mcbans.firestar.mcbans.BanType;
 import com.mcbans.firestar.mcbans.MCBans;
-import com.mcbans.firestar.mcbans.api.data.PlayerLookupData;
 import com.mcbans.firestar.mcbans.callBacks.LookupCallback;
 import com.mcbans.firestar.mcbans.request.Ban;
 import com.mcbans.firestar.mcbans.request.Kick;
 import com.mcbans.firestar.mcbans.request.LookupRequest;
+import com.mcbans.firestar.mcbans.util.Util;
 
 public class MCBansAPI {
     private final MCBans plugin;
@@ -119,6 +119,14 @@ public class MCBansAPI {
      */
     public void lookup(String targetName, String senderName, LookupCallback callback){
         plugin.getLog().info("Plugin " + pname + " tried to lookup player " + targetName);
+        if (targetName == null || callback == null){
+            plugin.getLog().info("Invalid usage (null): lookup");
+            return;
+        }
+
+        if (!Util.isValidName(targetName)){
+            callback.error("Invalid lookup target name!");
+        }
 
         LookupRequest request = new LookupRequest(plugin, callback, targetName, senderName);
         Thread triggerThread = new Thread(request);
