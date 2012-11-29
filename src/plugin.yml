@@ -31,6 +31,10 @@ commands:
     description: lookup a player
     aliases: [lup]
     usage: /<command> <playername>
+  banlookup:
+    description: lookup a player
+    aliases: [blup]
+    usage: /<command> <banID>
   mcbans:
     description: mcbans functions
     usage: /<command> <function>
@@ -59,12 +63,18 @@ permissions:
   mcbans.view.alts:
     description: show notification of a players alts on connect
     default: op
+  mcbans.view.staff:
+    description: show notification of a mcbans staff on connect
+    default: true
   mcbans.alts.hide:
     description: Hide notification of alts on connect
     default: op
   mcbans.kick:
     description: Permission to use kick command
     default: op
-  mcbans.lookup:
+  mcbans.lookup.player:
     description: Permission to use lookup command
+    default: op
+  mcbans.lookup.ban:
+    description: Permission to use banlookup command
     default: op
