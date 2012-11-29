@@ -182,19 +182,15 @@ public class PlayerListener implements Listener {
         if(pcache.containsKey("b")){
             if (config.isSendPreviousBans())
                 Util.message(player, ChatColor.DARK_RED + _("bansOnRecord"));
-            if (!Perms.has(event.getPlayer(), "ignoreBroadcastLowRep")){
-                //MCBans.broadcastAll("プレイヤー'" + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + "'は" + ChatColor.DARK_RED + response.getString("totalBans") + "つのBAN" + ChatColor.WHITE + "を受けています" + ChatColor.AQUA + "(" + response.getString("playerRep") + " REP)" );
-                Util.broadcastMessage(ChatColor.RED + _("previousBans", I18n.PLAYER, player.getName()));
-            }else{
-                //MCBans.broadcastJoinView( "Player " + ChatColor.DARK_AQUA + PlayerName + ChatColor.WHITE + " has " + ChatColor.DARK_RED + response.getString("totalBans") + " ban(s)" + ChatColor.WHITE + " and " + ChatColor.AQUA + response.getString("playerRep") + " REP" + ChatColor.WHITE + "." );
+            if (!Perms.HIDE_VIEW.has(player))
                 Perms.VIEW_BANS.message(ChatColor.DARK_RED + _("previousBans", I18n.PLAYER, player.getName()));
-            }
         }
         if(pcache.containsKey("d")){
             Util.message(player, ChatColor.DARK_RED + _("disputes", I18n.COUNT, pcache.get("d")));
         }
         if(pcache.containsKey("a")){
-            Perms.VIEW_ALTS.message(ChatColor.DARK_PURPLE + _("altAccounts", I18n.PLAYER, player.getName(), I18n.ALTS, pcache.get("al")));
+            if (!Perms.HIDE_VIEW.has(player))
+                Perms.VIEW_ALTS.message(ChatColor.DARK_PURPLE + _("altAccounts", I18n.PLAYER, player.getName(), I18n.ALTS, pcache.get("al")));
         }
         if(pcache.containsKey("m")){
             //Util.broadcastMessage(ChatColor.AQUA + _("isMCBansMod", I18n.PLAYER, player.getName()));
@@ -214,6 +210,10 @@ public class PlayerListener implements Listener {
             }
             Util.message(player, ChatColor.AQUA + "You are a MCBans Staff Member! (ver " + plugin.getDescription().getVersion() + ")");
             Util.message(player, ChatColor.AQUA + "Online Admins: " + ((admins.size() > 0) ? Util.join(admins, ", ") : ChatColor.GRAY + "(none)"));
+        }
+
+        if (config.isSendJoinMessage()){
+            Util.message(player, ChatColor.DARK_GREEN + "Server secured by MCBans!");
         }
     }
 
