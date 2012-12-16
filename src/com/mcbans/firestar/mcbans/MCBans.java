@@ -138,7 +138,7 @@ public class MCBans extends JavaPlugin {
         if (acEnabled) log.info("AntiCheat plugin found! Enabled this integration!");
 
         final PluginDescriptionFile pdfFile = this.getDescription();
-        log.info(pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled!");
+        log.info(pdfFile.getName() + " version " + pdfFile.getVersion() + " is enabled (◜▿‾ *)");
     }
 
     @Override
