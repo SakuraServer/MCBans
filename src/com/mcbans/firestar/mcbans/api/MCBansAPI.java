@@ -114,12 +114,15 @@ public class MCBansAPI {
             plugin.getLog().info("Invalid usage (null): ipBan");
             return;
         }
+        if (!Util.isValidIP(ip)){
+            plugin.getLog().info("Invalid IP address (" + ip + "): ipBan");
+            return;
+        }
+        
         if (reason == null || reason.length() <= 0){
             reason = plugin.getConfigs().getDefaultLocal();
         }
 
-        // TODO add valid ip check here
-        
         BanIpRequest request = new BanIpRequest(plugin, callback, ip, reason, senderName);
         Thread thread = new Thread(request);
         thread.start();
@@ -155,7 +158,7 @@ public class MCBansAPI {
      * Lookup Player
      * @param targetName Lookup target player name
      * @param senderName Lookup issued admin name
-     * @param callback LookupCallback LookupCallback
+     * @param callback LookupCallback
      */
     public void lookupPlayer(String targetName, String senderName, LookupCallback callback){
         plugin.getLog().info("Plugin " + pname + " tried to lookup player " + targetName);
@@ -176,7 +179,7 @@ public class MCBansAPI {
     /**
      * Lookup Ban
      * @param banID Lookup target ban ID
-     * @param callback BanLookupCallback BanLookupCallback
+     * @param callback BanLookupCallback
      */
     public void lookupBan(int banID, BanLookupCallback callback){
         plugin.getLog().info("Plugin " + pname + " tried to ban lookup " + banID);
@@ -193,7 +196,7 @@ public class MCBansAPI {
     /**
      * Lookup Alt Accounts
      * @param playerName Lookup target player name
-     * @param callback BanLookupCallback BanLookupCallback
+     * @param callback BanLookupCallback
      */
     public void lookupAlt(String playerName, AltLookupCallback callback){
         plugin.getLog().info("Plugin " + pname + " tried to alt lookup " + playerName);
