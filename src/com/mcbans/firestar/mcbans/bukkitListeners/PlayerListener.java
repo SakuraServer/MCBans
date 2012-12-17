@@ -178,13 +178,12 @@ public class PlayerListener implements Listener {
 
         final HashMap<String,String> pcache = plugin.playerCache.remove(player.getName());
         if(pcache == null) return;
-
         if(pcache.containsKey("b")){
             if (!Perms.HIDE_VIEW.has(player))
-                Perms.VIEW_BANS.message(ChatColor.DARK_RED + _("previousBans", I18n.PLAYER, player.getName()));
+                Perms.VIEW_BANS.message(ChatColor.RED + _("previousBans", I18n.PLAYER, player.getName()));
         }
         if(pcache.containsKey("d")){
-            Util.message(player, ChatColor.DARK_RED + _("disputes", I18n.COUNT, pcache.get("d")));
+            Util.message(player, ChatColor.RED + _("disputes", I18n.COUNT, pcache.get("d")));
         }
         if(pcache.containsKey("a")){
             if (!Perms.HIDE_VIEW.has(player))
