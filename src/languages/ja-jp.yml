@@ -28,6 +28,7 @@ kickPlayer: "%REASON%"
 kickSuccess: "%PLAYER% はkickされました！"
 kickBroadcast: "%ADMIN% が %PLAYER% をkickしました:[%REASON%]"
 kickNoPlayer: "%PLAYER% はオフラインです！"
+kickExemptPlayer: "%PLAYER% をKickすることはできません！"
 kickBroadcast: "%ADMIN% は %PLAYER% をkickしました[%REASON%]"
 
 ipBanSuccess: "IP %IP% はBANされました:[%REASON%]"
