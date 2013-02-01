@@ -182,6 +182,9 @@ public class ConfigurationManager {
     public boolean isSendJoinMessage(){
         return conf.getBoolean("onJoinMCBansMessage", false);
     }
+    public boolean isSendDetailPrevBans(){
+        return conf.getBoolean("sendDetailPrevBansOnJoin", false);
+    }
     public double getMinRep(){
         return conf.getDouble("minRep", 3.0D);
     }
