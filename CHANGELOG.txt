@@ -4,6 +4,7 @@
 - Added permission: exempt from kicks (mcbans.kick.exempt)
 - Auto regenerate missing locale files on /mcbans reload
 - Fixed language file warning
+- Fixed remaining time format
 - Fixed ban sync
 
 4.0:
